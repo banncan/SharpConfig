@@ -184,7 +184,7 @@ namespace SharpConfig
     {
       if (value == string.Empty)
       {
-        return default(double);
+        return Enum.ToObject(hint, 0);
       }
 
       value = RemoveTypeNames(value);
