@@ -69,6 +69,10 @@ namespace SharpConfig
     private string _cacheString = string.Empty;
     private string _cacheRaw = string.Empty;
 
+    private string _orgValue = string.Empty;
+    private string _rawValue = string.Empty;
+    private bool _isChanged = false;
+
     private int _cachedArraySize;
     private bool _shouldCalculateArraySize;
     private char _cachedArrayElementSeparator;
@@ -93,14 +97,60 @@ namespace SharpConfig
     }
 
     /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public CacheSetting AcceptChange()
+    {
+      if (IsChanged)
+      {
+        _orgValue = _rawValue;
+        _isChanged = false;
+      }
+      return this;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
+    public CacheSetting ResetChange()
+    {
+      if (IsChanged)
+      {
+        _rawValue = _orgValue;
+        _flag[-1] = false;
+        _isChanged = false;
+      }
+      return this;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public bool IsChanged => _isChanged;
+
+    /// <summary>
     /// Gets a value indicating whether this setting's value is empty.
     /// </summary>
-    public bool IsEmpty => string.IsNullOrEmpty(RawValue);
+    public bool IsEmpty => string.IsNullOrEmpty(_rawValue);
 
     /// <summary>
     /// Gets or sets the raw value of this setting.
     /// </summary>
-    public string RawValue { get; set; } = string.Empty;
+    public string RawValue
+    {
+      get => _rawValue;
+      set
+      {
+        if (string.Compare(_rawValue, value, false) != 0)
+        {
+          _rawValue = value;
+          _flag[-1] = false;
+          _isChanged = string.Compare(_rawValue, _orgValue, false) != 0;
+        }
+      }
+    }
 
     /// <summary>
     /// Gets or sets the value of this setting as a <see cref="string"/>.
@@ -419,7 +469,7 @@ namespace SharpConfig
     private int CalculateArraySize()
     {
       var size = 0;
-      var enumerator = new SettingArrayEnumerator(RawValue, false);
+      var enumerator = new SettingArrayEnumerator(_rawValue, false);
 
       while (enumerator.Next())
       {
@@ -457,7 +507,7 @@ namespace SharpConfig
             "The setting represents an array. Use GetValueArray() to obtain its value.");
       }
 
-      return CreateObjectFromString(RawValue, type)!;
+      return CreateObjectFromString(_rawValue, type)!;
     }
 
     /// <summary>
@@ -487,7 +537,7 @@ namespace SharpConfig
 
       if (myArraySize > 0)
       {
-        var enumerator = new SettingArrayEnumerator(RawValue, true);
+        var enumerator = new SettingArrayEnumerator(_rawValue, true);
         var elementIndex = 0;
 
         while (enumerator.Next())
@@ -656,7 +706,7 @@ namespace SharpConfig
       {
         // If the value is a multiline value, we don't want to trim quotes,
         // as they are part of the verbatim content.
-        if (RawValue.StartsWith("[[") && RawValue.EndsWith("]]"))
+        if (_rawValue.StartsWith("[[") && _rawValue.EndsWith("]]"))
         {
           _cacheString = GetValue<string>();
         }
@@ -695,7 +745,7 @@ namespace SharpConfig
             "The setting represents an array. Use GetValueArray() to obtain its value.");
       }
 
-      return (T)CreateObjectFromString(RawValue, type)!;
+      return (T)CreateObjectFromString(_rawValue, type)!;
     }
 
     /// <summary>
@@ -727,7 +777,7 @@ namespace SharpConfig
 
       if (myArraySize > 0)
       {
-        var enumerator = new SettingArrayEnumerator(RawValue, true);
+        var enumerator = new SettingArrayEnumerator(_rawValue, true);
         var elementIndex = 0;
 
         while (enumerator.Next())
@@ -767,7 +817,7 @@ namespace SharpConfig
             "The setting represents an array. Use GetValueArray() to obtain its value.");
       }
 
-      var result = CreateObjectFromString(RawValue, type, true);
+      var result = CreateObjectFromString(_rawValue, type, true);
 
       if (result != null)
       {
@@ -876,8 +926,9 @@ namespace SharpConfig
             strings[i] = GetValueForOutput(converter.ConvertToString(elemValue));
           }
 
-          RawValue = $"{{{string.Join(Configuration.ArrayElementSeparator.ToString(), strings)}}}";
+          _rawValue = $"{{{string.Join(Configuration.ArrayElementSeparator.ToString(), strings)}}}";
           _flag[-1] = false;
+          _isChanged = string.Compare(_rawValue, _orgValue, false) != 0;
           _cachedArraySize = values.Length;
         }
 
@@ -886,16 +937,18 @@ namespace SharpConfig
       else
       {
         var converter = Configuration.FindTypeStringConverter(type);
-        RawValue = converter.ConvertToString(value);
+        _rawValue = converter.ConvertToString(value);
         _flag[-1] = false;
+        _isChanged = string.Compare(_rawValue, _orgValue, false) != 0;
         _shouldCalculateArraySize = true;
       }
     }
 
     private void SetEmptyValue()
     {
-      RawValue = string.Empty;
+      _rawValue = string.Empty;
       _flag[-1] = false;
+      _isChanged = string.Compare(_rawValue, _orgValue, false) != 0;
       _cachedArraySize = -1;
       _shouldCalculateArraySize = false;
     }
@@ -940,8 +993,8 @@ namespace SharpConfig
     /// <returns>The element's expression as a string.</returns>
     protected override string GetStringExpression()
     {
-      return Configuration.SpaceBetweenEquals ? $"{Name} = {GetValueForOutput(RawValue)}"
-                                              : $"{Name}={GetValueForOutput(RawValue)}";
+      return Configuration.SpaceBetweenEquals ? $"{Name} = {GetValueForOutput(_rawValue)}"
+                                              : $"{Name}={GetValueForOutput(_rawValue)}";
     }
 
     private static ArgumentException CreateJaggedArraysNotSupportedEx(Type type)

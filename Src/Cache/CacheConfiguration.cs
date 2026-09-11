@@ -21,7 +21,7 @@ namespace SharpConfig
   /// </summary>
   public class CacheConfiguration : IEnumerable<CacheSection>
   {
-    internal readonly HashSet<string> _indexs;
+    internal readonly Dictionary<string, int> _indexs;
     internal readonly List<CacheSection> _sections;
 
     /// <summary>
@@ -29,7 +29,7 @@ namespace SharpConfig
     /// </summary>
     public CacheConfiguration()
     {
-      _indexs = new HashSet<string>();
+      _indexs = new Dictionary<string, int>();
       _sections = new List<CacheSection>();
     }
 

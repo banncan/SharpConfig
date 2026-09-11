@@ -74,7 +74,7 @@ namespace SharpConfig
 
     private static readonly Dictionary<Type, TypeMappingMetadata> s_mappingMetadata = new();
 
-    private readonly HashSet<string> _indexs;
+    private readonly Dictionary<string, int> _indexs;
     private readonly List<CacheSetting> _settings;
     /// <summary>
     /// Initializes a new instance of the <see cref="CacheSection"/> class.
@@ -83,7 +83,7 @@ namespace SharpConfig
     /// <param name="name">The name of the section.</param>
     public CacheSection(string name) : base(name)
     {
-      _indexs = new HashSet<string>();
+      _indexs = new Dictionary<string, int>();
       _settings = new List<CacheSetting>();
     }
 

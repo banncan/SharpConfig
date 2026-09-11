@@ -23,7 +23,7 @@ namespace SharpConfig
 
     private static void Parse(StringReader reader, CacheConfiguration config)
     {
-      var currentSection = new Section(Section.DefaultSectionName);
+      var currentSection = new CacheSection(CacheSection.DefaultSectionName);
       var preCommentBuilder = new StringBuilder();
       var lineNumber = 0;
       string? line;
@@ -61,10 +61,10 @@ namespace SharpConfig
           lineWithoutComment = line.Remove(commentIndex).Trim(); // remove inline comment
         }
 
-        if (lineWithoutComment.StartsWith("[")) // Section
+        if (lineWithoutComment.StartsWith("[")) // CacheSection
         {
           // If the first section has been found but settings already exist, add them to the default section.
-          if (currentSection.Name == Section.DefaultSectionName && currentSection.SettingCount > 0)
+          if (currentSection.Name == CacheSection.DefaultSectionName && currentSection.SettingCount > 0)
           {
             config.Add(currentSection);
           }
@@ -87,7 +87,7 @@ namespace SharpConfig
 
           config.Add(currentSection);
         }
-        else // Setting
+        else // CacheSetting
         {
           var setting = ParseSetting(
               Configuration.IgnoreInlineComments ? line : lineWithoutComment, reader, ref lineNumber);
@@ -111,7 +111,7 @@ namespace SharpConfig
       // If the source contained settings but never opened a named section, the
       // default section was never added above (that only happens when the first
       // '[' is encountered). Commit it here so its settings aren't silently lost.
-      if (currentSection.Name == Section.DefaultSectionName && currentSection.SettingCount > 0)
+      if (currentSection.Name == CacheSection.DefaultSectionName && currentSection.SettingCount > 0)
       {
         config.Add(currentSection);
       }
@@ -164,7 +164,7 @@ namespace SharpConfig
       return comment;
     }
 
-    private static Section ParseSection(string line, int lineNumber)
+    private static CacheSection ParseSection(string line, int lineNumber)
     {
       // Format(s) of a section:
       // 1) [<name>]
@@ -182,16 +182,16 @@ namespace SharpConfig
       // Anything after the (last) closing bracket must be whitespace.
       if (line.Length <= closingBracketIndex + 1)
       {
-        return new Section(sectionName);
+        return new CacheSection(sectionName);
       }
 
       var endPart = line.Substring(closingBracketIndex + 1).Trim();
 
       return endPart.Length > 0 ? throw new ParserException($"Unexpected token: '{endPart}'", lineNumber)
-                                : new Section(sectionName);
+                                : new CacheSection(sectionName);
     }
 
-    private static Setting ParseSetting(string line, StringReader reader, ref int lineNumber)
+    private static CacheSetting ParseSetting(string line, StringReader reader, ref int lineNumber)
     {
       // Format(s) of a setting:
       // 1) <name> = <value>
@@ -232,7 +232,7 @@ namespace SharpConfig
 
       if (equalSignIndex < 0)
       {
-        throw new ParserException("Setting assignment expected.", lineNumber);
+        throw new ParserException("CacheSetting assignment expected.", lineNumber);
       }
 
       if (!isQuotedName)
@@ -242,7 +242,7 @@ namespace SharpConfig
 
       if (string.IsNullOrEmpty(settingName))
       {
-        throw new ParserException("Setting name expected.", lineNumber);
+        throw new ParserException("CacheSetting name expected.", lineNumber);
       }
 
       var settingValue = line.Substring(equalSignIndex + 1).Trim();
@@ -280,7 +280,7 @@ namespace SharpConfig
         settingValue = settingValueBuffer.ToString();
       }
 
-      return new Setting(settingName!, settingValue);
+      return new CacheSetting(settingName!, settingValue);
     }
 
     internal static CacheConfiguration ReadFromBinaryStream(Stream stream, BinaryReader? reader)
@@ -303,13 +303,13 @@ namespace SharpConfig
       {
         var sectionName = reader.ReadString();
         var settingCount = reader.ReadInt32();
-        var section = new Section(sectionName);
+        var section = new CacheSection(sectionName);
 
         ReadCommentsBinary(reader, section);
 
         for (int j = 0; j < settingCount; j++)
         {
-          var setting = new Setting(reader.ReadString()) { RawValue = reader.ReadString() };
+          var setting = new CacheSetting(reader.ReadString()) { RawValue = reader.ReadString() };
           ReadCommentsBinary(reader, setting);
           section.Add(setting);
         }

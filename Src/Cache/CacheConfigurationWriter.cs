@@ -33,7 +33,7 @@ namespace SharpConfig
 
       bool isFirstSection = true;
 
-      void WriteSection(Section section)
+      void WriteSection(CacheSection section)
       {
         if (!isFirstSection)
         {
@@ -45,7 +45,7 @@ namespace SharpConfig
           writer.WriteLine();
         }
 
-        if (section.Name != Section.DefaultSectionName)
+        if (section.Name != CacheSection.DefaultSectionName)
         {
           writer.WriteLine(section.ToString());
         }
@@ -55,7 +55,7 @@ namespace SharpConfig
           writer.WriteLine(setting.ToString());
         }
 
-        if (section.Name != Section.DefaultSectionName || section.SettingCount > 0)
+        if (section.Name != CacheSection.DefaultSectionName || section.SettingCount > 0)
         {
           isFirstSection = false;
         }
