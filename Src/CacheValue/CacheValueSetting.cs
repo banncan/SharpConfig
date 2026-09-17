@@ -173,8 +173,8 @@ namespace SharpConfig
     /// 
     /// </summary>
     /// <param name="key"></param>
-    /// <param name="value"></param>
     /// <param name="defaultValue"></param>
+    /// <param name="value"></param>
     public CacheValueSetting(KeySetting key, CacheSetting defaultValue, object value) : base(key.Code, value)
     {
       this._keySetting = key;
