@@ -73,6 +73,8 @@ namespace SharpConfig
     private string _rawValue = string.Empty;
     private bool _isChanged = false;
 
+    private Guid _guid;
+
     private int _cachedArraySize;
     private bool _shouldCalculateArraySize;
     private char _cachedArrayElementSeparator;
@@ -90,31 +92,43 @@ namespace SharpConfig
     ///
     /// <param name="name"> The name of the setting.</param>
     /// <param name="value">The value of the setting.</param>
-    public CacheSetting(string name, object value) : base(name)
+    public CacheSetting(string name, object? value) : base(name)
     {
       SetValue(value);
+      AcceptChange();
       _cachedArrayElementSeparator = Configuration.ArrayElementSeparator;
+      _guid = Guid.NewGuid();
     }
 
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="setting"></param>
     /// <returns></returns>
-    public CacheSetting AcceptChange()
+    public bool EqualsGuid(CacheSetting setting)
+    {
+      return setting != null && this._guid == setting._guid;
+    }
+
+    /// <summary>
+    /// Accept raw value.
+    /// </summary>
+    /// <returns></returns>
+    public void AcceptChange()
     {
       if (IsChanged)
       {
         _orgValue = _rawValue;
         _isChanged = false;
       }
-      return this;
+      // return this;
     }
 
     /// <summary>
-    /// 
+    /// Reset raw value.
     /// </summary>
     /// <returns></returns>
-    public CacheSetting ResetChange()
+    public void ResetChange()
     {
       if (IsChanged)
       {
@@ -122,11 +136,30 @@ namespace SharpConfig
         _flag[-1] = false;
         _isChanged = false;
       }
-      return this;
+      // return this;
     }
 
     /// <summary>
-    /// 
+    /// Reset raw value.
+    /// </summary>
+    /// <returns></returns>
+    public void ResetChange(CacheSetting setting)
+    {
+      if (!this.EqualsGuid(setting))
+      {
+        this._rawValue = setting._rawValue;
+        this._orgValue = setting._rawValue;
+        _flag[-1] = false;
+        _isChanged = false;
+        return;
+      }
+
+      ResetChange();
+      // return this;
+    }
+
+    /// <summary>
+    /// Raw vlaue is changed.
     /// </summary>
     public bool IsChanged => _isChanged;
 
@@ -160,7 +193,7 @@ namespace SharpConfig
     {
       // get
       // {
-      //   if (Configuration.OutputRawStringValues)
+      //   if (CacheConfiguration.OutputRawStringValues)
       //   {
       //     return GetValue<string>();
       //   }
@@ -175,7 +208,7 @@ namespace SharpConfig
       //   return GetValue<string>().Trim('\"');
       // }
       get => GetValueString();
-      set => SetValue(Configuration.OutputRawStringValues ? value : value.Trim('\"'));
+      set => SetValue(CacheConfiguration.OutputRawStringValues ? value : value.Trim('\"'));
     }
 
     /// <summary>
@@ -550,6 +583,95 @@ namespace SharpConfig
       return values;
     }
 
+    /// <summary>
+    /// Gets this setting's value as a specific type.
+    /// </summary>
+    ///
+    /// <param name="type">The type of the object to retrieve.</param>
+    ///
+    /// <exception cref="ArgumentNullException">When <paramref name="type"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">When <paramref name="type"/> is an array type.</exception>
+    /// <exception cref="InvalidOperationException">When the setting represents an array.</exception>
+    public object GetValueCache(Type type)
+    {
+      if (type == typeof(Int16))
+      {
+        return GetValueInt16();
+      }
+      else if (type == typeof(Int32))
+      {
+        return GetValueInt32();
+      }
+      else if (type == typeof(Int64))
+      {
+        return GetValueInt64();
+      }
+      else if (type == typeof(UInt16))
+      {
+        return GetValueUInt16();
+      }
+      else if (type == typeof(UInt32))
+      {
+        return GetValueUInt32();
+      }
+      else if (type == typeof(UInt64))
+      {
+        return GetValueUInt64();
+      }
+      else if (type == typeof(bool))
+      {
+        return GetValueBool();
+      }
+      else if (type == typeof(byte))
+      {
+        return GetValueByte();
+      }
+      else if (type == typeof(sbyte))
+      {
+        return GetValueSByte();
+      }
+      else if (type == typeof(char))
+      {
+        return GetValueChar();
+      }
+      else if (type == typeof(float))
+      {
+        return GetValueFloat();
+      }
+      else if (type == typeof(double))
+      {
+        return GetValueDouble();
+      }
+      else if (type == typeof(decimal))
+      {
+        return GetValueDecimal();
+      }
+      else if (type == typeof(DateTime))
+      {
+        return GetValueDateTime();
+      }
+      else if (type == typeof(string))
+      {
+        return GetValueString();
+      }
+
+      return GetValue(type);
+    }
+
+    /// <summary>
+    /// Gets this setting's value as a specific type.
+    /// </summary>
+    ///
+    /// <typeparam name="T">The type of the object to retrieve.</typeparam>
+    ///
+    /// <exception cref="InvalidOperationException">When <typeparamref name="T"/> is an array
+    /// type.</exception> <exception cref="InvalidOperationException">When the setting represents an
+    /// array.</exception>
+    public T GetValueCache<T>()
+    {
+      return (T)GetValueCache(typeof(T)); 
+    }
+
     private Int16 GetValueInt16()
     {
       if (!this._flag[_flagInt16])
@@ -692,7 +814,7 @@ namespace SharpConfig
 
     private string GetValueString()
     {
-      if (Configuration.OutputRawStringValues)
+      if (CacheConfiguration.OutputRawStringValues)
       {
         if (!this._flag[_flagRaw])
         {
@@ -955,7 +1077,7 @@ namespace SharpConfig
 
     private static string GetValueForOutput(string rawValue)
     {
-      if (Configuration.OutputRawStringValues)
+      if (CacheConfiguration.OutputRawStringValues)
       {
         return rawValue;
       }

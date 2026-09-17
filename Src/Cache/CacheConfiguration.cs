@@ -19,7 +19,7 @@ namespace SharpConfig
   /// to work with classic configuration formats such as
   /// .ini and .cfg, but is not limited to these.
   /// </summary>
-  public class CacheConfiguration : IEnumerable<CacheSection>
+  public partial class CacheConfiguration : IEnumerable<CacheSection>
   {
     internal readonly Dictionary<string, int> _indexs;
     internal readonly List<CacheSection> _sections;
